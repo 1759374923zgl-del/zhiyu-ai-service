@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智语 AI 客服平台 - 登录</title>
+  <meta name="description" content="智语AI客服平台，助力企业实现智能化客户服务，提升运营效率" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #00d4ff;
+      --primary-dark: #00b0d8;
+      --primary-glow: rgba(0,212,255,0.15);
+      --bg-deep: #0a141e;
+      --bg-card: #0f1c28;
+      --bg-input: #0b1822;
+      --border: #1a3042;
+      --border-focus: rgba(0,212,255,0.5);
+      --text-primary: #e2edf8;
+      --text-secondary: #6a90ab;
+      --text-muted: #3d607a;
+      --danger: #e05252;
+      --success: #00c878;
+    }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg-deep);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-image:
+        radial-gradient(ellipse 60% 40% at 15% 50%, rgba(0,180,255,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 60% at 85% 20%, rgba(0,80,200,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 50% 90%, rgba(0,100,180,0.04) 0%, transparent 60%);
+    }
+
+    /* 顶部导航 */
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 36px;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+    }
+    .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-icon {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: linear-gradient(135deg, #00d4ff 0%, #0072cc 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; box-shadow: 0 4px 16px rgba(0,212,255,0.3);
+    }
+    .logo-text { color: var(--text-primary); font-size: 17px; font-weight: 600; letter-spacing: 0.3px; }
+    .topbar-right { display: flex; align-items: center; gap: 24px; }
+    .topbar-link {
+      color: var(--text-secondary); font-size: 14px; cursor: pointer;
+      transition: color .2s; background: none; border: none; font-family: inherit;
+    }
+    .topbar-link:hover { color: var(--primary); }
+    .lang-tag {
+      background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+      color: var(--primary); padding: 5px 14px; border-radius: 20px; font-size: 13px;
+    }
+
+    /* 主内容 */
+    .main {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 48px 20px;
+    }
+    .hero-title {
+      color: var(--text-primary); font-size: 38px; font-weight: 700;
+      margin-bottom: 12px; text-align: center; letter-spacing: 1px;
+    }
+    .hero-sub {
+      color: var(--text-secondary); font-size: 15px; margin-bottom: 44px; text-align: center;
+      letter-spacing: 0.3px;
+    }
+
+    /* 卡片 */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      width: 100%; max-width: 400px;
+      padding: 36px 36px 28px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.02);
+    }
+
+    /* Tab */
+    .tab-bar {
+      display: flex; border-bottom: 1px solid var(--border); margin-bottom: 30px;
+    }
+    .tab-btn {
+      flex: 1; text-align: center; padding: 11px 0;
+      color: var(--text-muted); font-size: 15px; cursor: pointer;
+      border: none; border-bottom: 2px solid transparent;
+      background: none; transition: all .25s; font-family: inherit; font-weight: 500;
+    }
+    .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .tab-btn:not(.active):hover { color: var(--text-secondary); }
+
+    /* 表单 */
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: flex; align-items: center; gap: 7px;
+      color: var(--text-secondary); font-size: 13px; margin-bottom: 9px;
+    }
+    .form-label-icon { font-size: 14px; opacity: 0.8; }
+    .form-label-right { margin-left: auto; color: var(--primary); font-size: 12px; cursor: pointer; }
+    .form-label-right:hover { text-decoration: underline; }
+    .input-wrap { position: relative; }
+    .form-input {
+      width: 100%; background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 9px; padding: 13px 15px;
+      color: var(--text-primary); font-size: 14px;
+      transition: border-color .2s, box-shadow .2s; outline: none;
+      font-family: inherit;
+    }
+    .form-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--primary-glow);
+    }
+    .form-input::placeholder { color: var(--text-muted); }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); cursor: pointer; font-size: 16px;
+      background: none; border: none; transition: color .2s;
+    }
+    .toggle-pw:hover { color: var(--primary); }
+
+    /* 记住 */
+    .remember-row {
+      display: flex; align-items: center; gap: 9px; margin-bottom: 24px;
+    }
+    .checkbox { width: 16px; height: 16px; accent-color: var(--primary); cursor: pointer; }
+    .remember-label { color: var(--text-secondary); font-size: 13px; cursor: pointer; }
+
+    /* 主按钮 */
+    .btn-primary {
+      width: 100%; padding: 14px; border: none; border-radius: 9px;
+      background: linear-gradient(135deg, #00d4ff 0%, #0090cc 100%);
+      color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      font-family: inherit; letter-spacing: 0.5px;
+      box-shadow: 0 4px 20px rgba(0,180,255,0.25);
+    }
+    .btn-primary:hover {
+      opacity: 0.92; transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(0,180,255,0.35);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    /* 提示框 */
+    .alert {
+      padding: 11px 15px; border-radius: 8px; font-size: 13px;
+      margin-bottom: 18px; display: none; line-height: 1.5;
+    }
+    .alert-error {
+      background: rgba(224,82,82,0.1);
+      border: 1px solid rgba(224,82,82,0.3);
+      color: #f08080;
+    }
+    .alert-success {
+      background: rgba(0,200,120,0.1);
+      border: 1px solid rgba(0,200,120,0.3);
+      color: #60d090;
+    }
+
+    /* 协议 */
+    .agreement { text-align: center; color: var(--text-muted); font-size: 12px; margin-top: 22px; }
+    .agreement a { color: var(--primary); text-decoration: none; }
+
+    /* 页脚 */
+    footer { text-align: center; color: var(--text-muted); font-size: 12px; padding: 22px; }
+
+    /* 面板动画 */
+    .panel { display: none; animation: fadeUp .3s ease; }
+    .panel.active { display: block; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 加载spinner */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .6s linear infinite; margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <nav class="topbar">
+    <a class="logo" href="#">
+      <div class="logo-icon">🏠</div>
+      <span class="logo-text">智语 AI 客服平台</span>
+    </a>
+    <div class="topbar-right">
+      <button class="topbar-link">帮助中心</button>
+      <span class="lang-tag">语言：简体中文</span>
+    </div>
+  </nav>
+
+  <!-- 主内容 -->
+  <main class="main">
+    <h1 class="hero-title">欢迎回来</h1>
+    <p class="hero-sub">助力企业实现智能化客户服务，提升运营效率</p>
+
+    <div class="card">
+      <!-- Tab切换 -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tab-login" onclick="switchTab('login')">登录</button>
+        <button class="tab-btn" id="tab-register" onclick="switchTab('register')">注册账号</button>
+      </div>
+
+      <!-- 提示框 -->
+      <div class="alert alert-error" id="alert-box"></div>
+      <div class="alert alert-success" id="success-box"></div>
+
+      <!-- 登录面板 -->
+      <div class="panel active" id="panel-login">
+        <div class="form-group">
+          <div class="form-label">
+            <span class="form-label-icon">👤</span>
+            <span>用户名 / 邮箱</span>
+          </div>
+          <input class="form-input" type="text" id="login-username"
+                 placeholder="请输入您的账号" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <div class="form-label">
+            <span class="form-label-icon">🔒</span>
+            <span>密码</span>
+            <span class="form-label-right">忘记密码？</span>
+          </div>
+          <div class="input-wrap">
+            <input class="form-input" type="password" id="login-password"
+                   placeholder="请输入登录密码" style="padding-right:44px"
+                   autocomplete="current-password" />
+            <button class="toggle-pw" onclick="togglePw('login-password',this)" type="button">👁</button>
+          </div>
+        </div>
+        <div class="remember-row">
+          <input type="checkbox" class="checkbox" id="remember" />
+          <label class="remember-label" for="remember">记住登录状态</label>
+        </div>
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">立即登录</button>
+      </div>
+
+      <!-- 注册面板 -->
+      <div class="panel" id="panel-register">
+        <div class="form-group">
+          <div class="form-label">
+            <span class="form-label-icon">👤</span>
+            <span>用户名</span>
+          </div>
+          <input class="form-input" type="text" id="reg-username"
+                 placeholder="请设置用户名（2-20位字符）" autocomplete="username" />
+        </div>
+        <div class="form-group">
+          <div class="form-label">
+            <span class="form-label-icon">🔒</span>
+            <span>密码</span>
+          </div>
+          <div class="input-wrap">
+            <input class="form-input" type="password" id="reg-password"
+                   placeholder="请设置密码（至少6位）" style="padding-right:44px"
+                   autocomplete="new-password" />
+            <button class="toggle-pw" onclick="togglePw('reg-password',this)" type="button">👁</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">
+            <span class="form-label-icon">🔒</span>
+            <span>确认密码</span>
+          </div>
+          <input class="form-input" type="password" id="reg-confirm"
+                 placeholder="再次输入密码" autocomplete="new-password" />
+        </div>
+        <button class="btn-primary" id="reg-btn" onclick="doRegister()">立即注册</button>
+      </div>
+
+      <p class="agreement">
+        登录即代表您已阅读并同意
+        <a href="#">《服务协议》</a> 和 <a href="#">《隐私政策》</a>
+      </p>
+    </div>
+  </main>
+
+  <footer>© 2024 智语 AI 客服平台 版权所有</footer>
+
+  <script>
+    const API = 'RENDER_BACKEND_URL';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('tab-' + tab).classList.add('active');
+      document.getElementById('panel-' + tab).classList.add('active');
+      hideAlert();
+    }
+
+    function togglePw(id, btn) {
+      const inp = document.getElementById(id);
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      btn.textContent = inp.type === 'password' ? '👁' : '🙈';
+    }
+
+    function showAlert(msg, type = 'error') {
+      const errBox = document.getElementById('alert-box');
+      const sucBox = document.getElementById('success-box');
+      errBox.style.display = 'none';
+      sucBox.style.display = 'none';
+      if (type === 'error') {
+        errBox.textContent = msg; errBox.style.display = 'block';
+      } else {
+        sucBox.textContent = msg; sucBox.style.display = 'block';
+      }
+    }
+
+    function hideAlert() {
+      document.getElementById('alert-box').style.display = 'none';
+      document.getElementById('success-box').style.display = 'none';
+    }
+
+    async function doLogin() {
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      if (!username || !password) { showAlert('请填写用户名和密码'); return; }
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>登录中...';
+
+      try {
+        const res = await fetch(API + '/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.code === 200) {
+          localStorage.setItem('token', data.data.token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          showAlert('登录成功，正在跳转...', 'success');
+          setTimeout(() => {
+            window.location.href = data.data.user.role === 'admin' ? '/admin.html' : '/chat.html';
+          }, 700);
+        } else {
+          showAlert(data.message || '登录失败');
+        }
+      } catch (e) {
+        showAlert('网络错误，请检查服务是否已启动');
+      } finally {
+        btn.disabled = false; btn.textContent = '立即登录';
+      }
+    }
+
+    async function doRegister() {
+      const username = document.getElementById('reg-username').value.trim();
+      const password = document.getElementById('reg-password').value.trim();
+      const confirm  = document.getElementById('reg-confirm').value.trim();
+
+      if (!username || !password || !confirm) { showAlert('请完整填写所有字段'); return; }
+      if (password !== confirm) { showAlert('两次输入的密码不一致'); return; }
+      if (password.length < 6)  { showAlert('密码长度不能少于6位'); return; }
+
+      const btn = document.getElementById('reg-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>注册中...';
+
+      try {
+        const res = await fetch(API + '/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (data.code === 200) {
+          localStorage.setItem('token', data.data.token);
+          localStorage.setItem('user', JSON.stringify(data.data.user));
+          showAlert('注册成功，正在跳转...', 'success');
+          setTimeout(() => { window.location.href = '/chat.html'; }, 700);
+        } else {
+          showAlert(data.message || '注册失败');
+        }
+      } catch (e) {
+        showAlert('网络错误，请检查服务是否已启动');
+      } finally {
+        btn.disabled = false; btn.textContent = '立即注册';
+      }
+    }
+
+    // Enter键提交
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      const panel = document.querySelector('.panel.active');
+      if (panel.id === 'panel-login') doLogin();
+      else doRegister();
+    });
+
+    // 已登录直接跳转
+    window.addEventListener('load', () => {
+      const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user') || 'null');
+      if (token && user) {
+        window.location.href = user.role === 'admin' ? '/admin.html' : '/chat.html';
+      }
+    });
+  </script>
+</body>
+</html>

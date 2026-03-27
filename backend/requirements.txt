@@ -1,0 +1,12 @@
+Flask==3.0.3
+Flask-JWT-Extended==4.6.0
+Flask-Cors==4.0.1
+Flask-SQLAlchemy==3.1.1
+SQLAlchemy==2.0.36
+Werkzeug==3.0.6
+PyMuPDF==1.24.14
+python-docx==1.1.2
+chromadb==0.5.23
+zhipuai==2.1.5.20230904
+python-dotenv==1.0.1
+gunicorn==23.0.0

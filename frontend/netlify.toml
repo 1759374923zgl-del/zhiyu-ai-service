@@ -1,0 +1,10 @@
+# Netlify 部署配置
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# 说明：不使用通配符重定向，让各 .html 文件直接访问
+# /admin.html 和 /chat.html 可以直接访问，不需要重定向

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智语 AI - 知识库管理后台</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #00d4ff;
+      --primary-dark: #0090cc;
+      --primary-glow: rgba(0,212,255,0.12);
+      --bg: #0a141e;
+      --bg-card: #0f1c28;
+      --bg-row: #0d1a25;
+      --bg-row-hover: #111f2e;
+      --bg-input: #0b1822;
+      --border: #1a3042;
+      --text: #dde8f5;
+      --text-sub: #6a90ab;
+      --text-muted: #3d607a;
+      --success: #00c878;
+      --warning: #ffaa00;
+      --danger: #e05252;
+      --badge-pdf: #e05555;
+      --badge-word: #4a90d9;
+    }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      color: var(--text);
+    }
+
+    /* 头部 */
+    .header {
+      display: flex; align-items: center;
+      padding: 0 28px; height: 64px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+      gap: 0;
+    }
+    .header-logo { display: flex; align-items: center; gap: 10px; margin-right: 28px; }
+    .logo-icon {
+      width: 38px; height: 38px; border-radius: 9px;
+      background: linear-gradient(135deg, #00d4ff, #0072cc);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; box-shadow: 0 3px 12px rgba(0,212,255,0.25);
+    }
+    .logo-sub { font-size: 11px; color: var(--text-sub); margin-top: 1px; }
+    .logo-name { font-size: 13px; font-weight: 600; color: var(--text); }
+
+    .header-title { font-size: 18px; font-weight: 600; color: var(--text); }
+
+    .header-search {
+      margin-left: 32px; flex: 1; max-width: 380px;
+      position: relative;
+    }
+    .header-search input {
+      width: 100%; background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 16px 8px 36px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      outline: none; transition: border-color .2s;
+    }
+    .header-search input:focus { border-color: rgba(0,212,255,0.4); }
+    .header-search input::placeholder { color: var(--text-muted); }
+    .header-search-icon {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-size: 15px;
+    }
+
+    .header-actions { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+
+    .btn-upload {
+      display: flex; align-items: center; gap: 7px;
+      background: linear-gradient(135deg, #00d4ff, #0090cc);
+      color: #fff; border: none; border-radius: 8px;
+      padding: 9px 20px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      box-shadow: 0 3px 14px rgba(0,180,255,0.2);
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-upload:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* 镜层切换按钞 */
+    .btn-switch {
+      display: flex; align-items: center; gap: 7px;
+      background: transparent;
+      color: var(--primary); border: 1px solid rgba(0,212,255,0.4);
+      border-radius: 8px; padding: 8px 18px;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      font-family: inherit; transition: all .2s;
+    }
+    .btn-switch:hover {
+      background: var(--primary-glow);
+      border-color: var(--primary);
+    }
+
+    .btn-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: border-color .2s; font-size: 17px;
+    }
+    .btn-icon:hover { border-color: var(--primary); }
+
+    .user-badge {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+    }
+    .user-info { text-align: right; }
+    .user-name { font-size: 14px; font-weight: 500; color: var(--text); }
+    .user-mail { font-size: 12px; color: var(--text-sub); }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #00d4ff, #0055aa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; color: #fff;
+    }
+
+    /* 主区域 */
+    .main { padding: 28px 32px; }
+
+    /* Tab过滤 */
+    .filter-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+    .ftab {
+      padding: 10px 22px; font-size: 14px; font-weight: 500;
+      color: var(--text-muted); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all .2s; background: none; border-top: none;
+      border-left: none; border-right: none; font-family: inherit;
+    }
+    .ftab .count {
+      display: inline-block; background: rgba(255,255,255,0.06);
+      padding: 1px 7px; border-radius: 10px; font-size: 12px; margin-left: 5px;
+    }
+    .ftab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .ftab.active .count { background: rgba(0,212,255,0.12); }
+    .ftab:not(.active):hover { color: var(--text-sub); }
+
+    /* 表格 */
+    .table-wrap {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      padding: 14px 20px; text-align: left;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-sub); background: rgba(0,0,0,0.15);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr {
+      border-bottom: 1px solid rgba(26,48,66,0.6);
+      transition: background .15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-row-hover); }
+    tbody td { padding: 16px 20px; font-size: 14px; vertical-align: middle; }
+
+    .doc-name { display: flex; align-items: center; gap: 10px; }
+    .file-icon {
+      width: 32px; height: 32px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .file-icon.pdf { background: rgba(224,85,85,0.15); }
+    .file-icon.word { background: rgba(74,144,217,0.15); }
+    .doc-name-text { font-weight: 500; color: var(--text); }
+
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 3px 10px; border-radius: 5px; font-size: 12px; font-weight: 500;
+    }
+    .badge-pdf { background: rgba(224,85,85,0.12); color: #e07878; border: 1px solid rgba(224,85,85,0.2); }
+    .badge-word { background: rgba(74,144,217,0.12); color: #7aabdf; border: 1px solid rgba(74,144,217,0.2); }
+
+    .status-dot {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 13px;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-success { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .dot-indexing { background: var(--warning); box-shadow: 0 0 6px var(--warning); animation: blink 1.2s ease-in-out infinite; }
+    .dot-failed { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .action-btn {
+      font-size: 13px; font-weight: 500; cursor: pointer;
+      background: none; border: none; font-family: inherit;
+      padding: 4px 8px; border-radius: 5px; transition: all .15s;
+    }
+    .action-view { color: var(--primary); }
+    .action-view:hover { background: var(--primary-glow); }
+    .action-retry { color: var(--warning); }
+    .action-retry:hover { background: rgba(255,170,0,0.1); }
+    .action-delete { color: var(--danger); }
+    .action-delete:hover { background: rgba(224,82,82,0.1); }
+
+    /* 分页 */
+    .pagination {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; border-top: 1px solid var(--border);
+      font-size: 13px; color: var(--text-sub);
+    }
+    .page-btns { display: flex; gap: 6px; }
+    .page-btn {
+      width: 32px; height: 32px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); background: var(--bg-input);
+      color: var(--text-sub); cursor: pointer; font-size: 13px;
+      transition: all .15s; font-family: inherit;
+    }
+    .page-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .page-text { padding: 0 10px; }
+
+    /* 上传模态框 */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 200;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px; width: 500px; max-width: 95vw;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+      animation: modalIn .25s ease;
+    }
+    @keyframes modalIn { from { opacity:0; transform:scale(0.95) translateY(10px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    .modal-title { font-size: 17px; font-weight: 600; margin-bottom: 24px; color: var(--text); }
+    .modal-close {
+      float: right; cursor: pointer; color: var(--text-muted); font-size: 20px;
+      background: none; border: none; transition: color .2s; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text); }
+    .form-row { margin-bottom: 18px; }
+    .form-label { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; display: block; }
+    .form-select, .form-control {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 8px; padding: 11px 14px;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      outline: none; transition: border-color .2s;
+    }
+    .form-select option { background: #0d1a25; }
+    .form-select:focus, .form-control:focus { border-color: rgba(0,212,255,0.4); }
+
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 32px 20px; text-align: center; cursor: pointer;
+      transition: all .2s; position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--primary);
+      background: var(--primary-glow);
+    }
+    .drop-zone input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 36px; margin-bottom: 10px; }
+    .drop-text { font-size: 14px; color: var(--text-sub); margin-bottom: 4px; }
+    .drop-hint { font-size: 12px; color: var(--text-muted); }
+    .drop-selected { font-size: 14px; color: var(--primary); margin-top: 8px; font-weight: 500; }
+
+    .modal-footer { display: flex; gap: 12px; margin-top: 26px; justify-content: flex-end; }
+    .btn-cancel {
+      padding: 10px 22px; border-radius: 8px; font-size: 14px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-sub); cursor: pointer; font-family: inherit;
+      transition: all .15s;
+    }
+    .btn-cancel:hover { border-color: var(--primary); color: var(--primary); }
+    .btn-confirm {
+      padding: 10px 22px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      background: linear-gradient(135deg, #00d4ff, #0090cc);
+      color: #fff; border: none; cursor: pointer; font-family: inherit;
+      transition: opacity .2s;
+    }
+    .btn-confirm:hover { opacity: 0.9; }
+    .btn-confirm:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* 知识库模态框 */
+    #kb-modal .modal { width: 420px; }
+
+    /* 消息提示 */
+    .toast {
+      position: fixed; top: 80px; right: 28px; z-index: 300;
+      padding: 13px 20px; border-radius: 10px; font-size: 14px;
+      transform: translateX(120%); transition: transform .3s ease;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+    .toast.show { transform: translateX(0); }
+    .toast-success { background: #0d2a1e; border: 1px solid rgba(0,200,120,0.3); color: #60d090; }
+    .toast-error { background: #2a0e0e; border: 1px solid rgba(224,82,82,0.3); color: #f08080; }
+
+    /* 空状态 */
+    .empty-state {
+      text-align: center; padding: 60px 20px; color: var(--text-muted);
+    }
+    .empty-state .empty-icon { font-size: 48px; margin-bottom: 14px; }
+    .empty-state p { font-size: 15px; }
+
+    /* 加载 */
+    .loading-row td {
+      text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px;
+    }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff; border-radius: 50%;
+      animation: spin .6s linear infinite; vertical-align: middle; margin-right: 4px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- 头部 -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-icon">🏠</div>
+    <div>
+      <div class="logo-name">智语 AI</div>
+      <div class="logo-sub">后台管理平台</div>
+    </div>
+  </div>
+  <div class="header-title">知识库管理</div>
+  <div class="header-search">
+    <span class="header-search-icon">🔍</span>
+    <input type="text" id="search-input" placeholder="搜索文档..." />
+  </div>
+  <div class="header-actions">
+    <button class="btn-switch" onclick="window.location.href='/chat.html'">💬 用户端</button>
+    <button class="btn-upload" onclick="openKbModal()">📚 新建知识库</button>
+    <button class="btn-upload" onclick="openUploadModal()">📤 上传文档</button>
+    <div class="btn-icon" title="通知">🔔</div>
+    <div class="btn-icon" title="退出登录" onclick="doLogout()" style="color:var(--text-sub);font-size:15px" title="退出登录">⏻</div>
+    <div class="user-badge">
+      <div class="user-info">
+        <div class="user-name" id="header-username">管理员</div>
+        <div class="user-mail">admin@zhiyu.ai</div>
+      </div>
+      <div class="avatar">👤</div>
+    </div>
+  </div>
+</header>
+
+<!-- 主内容 -->
+<main class="main">
+  <!-- Tab过滤 -->
+  <div class="filter-tabs">
+    <button class="ftab active" id="ftab-all" onclick="filterDocs('all')">
+      全部文档 <span class="count" id="cnt-all">0</span>
+    </button>
+    <button class="ftab" id="ftab-success" onclick="filterDocs('success')">
+      成功发布 <span class="count" id="cnt-success">0</span>
+    </button>
+    <button class="ftab" id="ftab-failed" onclick="filterDocs('failed')">
+      处理失败 <span class="count" id="cnt-failed">0</span>
+    </button>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-bottom:4px">
+      <select id="kb-filter" class="form-select" style="width:160px;padding:6px 10px;font-size:13px" onchange="onKbFilterChange()">
+        <option value="">所有知识库</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- 表格 -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>文档名称</th>
+          <th>类型</th>
+          <th>状态</th>
+          <th>所属分类</th>
+          <th>上传日期</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="doc-tbody">
+        <tr class="loading-row"><td colspan="6">⏳ 加载中...</td></tr>
+      </tbody>
+    </table>
+    <div class="pagination">
+      <div id="page-info">显示 0 到 0 共 0 条记录</div>
+      <div class="page-btns" id="page-btns"></div>
+    </div>
+  </div>
+</main>
+
+<!-- 上传文档模态框 -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-title">
+      上传文档
+      <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <label class="form-label">所属知识库</label>
+      <select class="form-select" id="upload-kb-select">
+        <option value="">请选择知识库</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">选择文件（PDF / Word）</label>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="file-input" accept=".pdf,.doc,.docx" onchange="onFileChange()" />
+        <div class="drop-icon">📄</div>
+        <div class="drop-text">拖拽文件到此处，或点击选择</div>
+        <div class="drop-hint">支持 PDF、Word（.doc/.docx）格式，单文件最大 50MB</div>
+        <div class="drop-selected" id="selected-file"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('upload-modal')">取消</button>
+      <button class="btn-confirm" id="upload-btn" onclick="doUpload()">开始上传</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新建知识库模态框 -->
+<div class="modal-overlay" id="kb-modal">
+  <div class="modal" style="width:420px">
+    <div class="modal-title">
+      新建知识库
+      <button class="modal-close" onclick="closeModal('kb-modal')">✕</button>
+    </div>
+    <div class="form-row">
+      <label class="form-label">知识库名称</label>
+      <input class="form-control" type="text" id="kb-name" placeholder="请输入知识库名称" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">描述（可选）</label>
+      <input class="form-control" type="text" id="kb-desc" placeholder="简短描述这个知识库的用途" />
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('kb-modal')">取消</button>
+      <button class="btn-confirm" id="kb-btn" onclick="doCreateKb()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast消息 -->
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'RENDER_BACKEND_URL';
+  let currentFilter = 'all';
+  let currentPage = 1;
+  let totalPages = 1;
+  let currentKbId = '';
+  let searchTimer = null;
+  let knowledgeBases = [];
+
+  // ============ 工具函数 ============
+  function getToken() { return localStorage.getItem('token'); }
+
+  function authHeaders() {
+    return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() };
+  }
+
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+    t.className = 'toast toast-' + type + ' show';
+    setTimeout(() => { t.classList.remove('show'); }, 3000);
+  }
+
+  function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  function openUploadModal() {
+    loadKbOptions();
+    document.getElementById('selected-file').textContent = '';
+    document.getElementById('file-input').value = '';
+    document.getElementById('upload-modal').classList.add('show');
+  }
+
+  function openKbModal() {
+    document.getElementById('kb-name').value = '';
+    document.getElementById('kb-desc').value = '';
+    document.getElementById('kb-modal').classList.add('show');
+  }
+
+  function onFileChange() {
+    const f = document.getElementById('file-input').files[0];
+    document.getElementById('selected-file').textContent = f ? '已选择：' + f.name : '';
+  }
+
+  // 拖放效果
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    const dt = e.dataTransfer;
+    if (dt.files.length) {
+      document.getElementById('file-input').files = dt.files;
+      onFileChange();
+    }
+  });
+
+  // 点击模态框外部关闭
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', e => {
+      if (e.target === overlay) overlay.classList.remove('show');
+    });
+  });
+
+  // ============ 登录检查 ============
+  async function checkAuth() {
+    const token = getToken();
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+    if (!token || !user || user.role !== 'admin') {
+      window.location.href = '/';
+      return false;
+    }
+    document.getElementById('header-username').textContent = user.username;
+    return true;
+  }
+
+  function doLogout() {
+    if (!confirm('确认退出登录？')) return;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+  }
+
+  // ============ 知识库 ============
+  async function loadKbOptions() {
+    try {
+      const res = await fetch(API + '/api/admin/knowledge-bases', {
+        headers: authHeaders()
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        knowledgeBases = data.data;
+        // 上传弹窗的下拉
+        const sel = document.getElementById('upload-kb-select');
+        sel.innerHTML = '<option value="">请选择知识库</option>';
+        // 筛选下拉
+        const kbFilter = document.getElementById('kb-filter');
+        const prevVal = kbFilter.value;
+        kbFilter.innerHTML = '<option value="">所有知识库</option>';
+        data.data.forEach(kb => {
+          const opt = `<option value="${kb.id}">${kb.name}</option>`;
+          sel.innerHTML += opt;
+          kbFilter.innerHTML += opt;
+        });
+        // 尝试恢复之前的选中状态
+        if (prevVal) kbFilter.value = prevVal;
+      }
+    } catch (e) {}
+  }
+
+  async function doCreateKb() {
+    const name = document.getElementById('kb-name').value.trim();
+    const desc = document.getElementById('kb-desc').value.trim();
+    if (!name) { showToast('请输入知识库名称', 'error'); return; }
+
+    const btn = document.getElementById('kb-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>创建中...';
+
+    try {
+      const res = await fetch(API + '/api/admin/knowledge-bases', {
+        method: 'POST', headers: authHeaders(),
+        body: JSON.stringify({ name, description: desc })
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        showToast('知识库创建成功');
+        closeModal('kb-modal');
+        loadDocs();
+      } else {
+        showToast(data.message || '创建失败', 'error');
+      }
+    } catch (e) {
+      showToast('网络错误', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '创建';
+    }
+  }
+
+  function onKbFilterChange() {
+    currentKbId = document.getElementById('kb-filter').value;
+    currentPage = 1;
+    loadDocs();
+  }
+
+  // ============ 文档列表 ============
+  async function loadDocs() {
+    const status = currentFilter === 'all' ? '' : currentFilter;
+    const keyword = document.getElementById('search-input').value.trim();
+    const params = new URLSearchParams({
+      page: currentPage, per_page: 8,
+      ...(status && { status }),
+      ...(keyword && { keyword }),
+      ...(currentKbId && { kb_id: currentKbId })
+    });
+
+    try {
+      const res = await fetch(API + '/api/admin/documents?' + params, {
+        headers: authHeaders()
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        renderDocs(data.data);
+      }
+    } catch (e) {
+      document.getElementById('doc-tbody').innerHTML =
+        '<tr class="loading-row"><td colspan="6">⚠️ 加载失败</td></tr>';
+    }
+
+    await loadStats();
+  }
+
+  async function loadStats() {
+    try {
+      const res = await fetch(API + '/api/admin/documents/stats', { headers: authHeaders() });
+      const data = await res.json();
+      if (data.code === 200) {
+        const d = data.data;
+        document.getElementById('cnt-all').textContent = d.total;
+        document.getElementById('cnt-success').textContent = d.success;
+        document.getElementById('cnt-failed').textContent = d.failed;
+      }
+    } catch (e) {}
+  }
+
+  function renderDocs(d) {
+    totalPages = d.pages || 1;
+    const total = d.total;
+    const start = (currentPage - 1) * 8 + 1;
+    const end = Math.min(currentPage * 8, total);
+    document.getElementById('page-info').textContent =
+      total > 0 ? `显示 ${start} 到 ${end} 共 ${total} 条记录` : '暂无记录';
+
+    if (!d.items || d.items.length === 0) {
+      document.getElementById('doc-tbody').innerHTML =
+        `<tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">📂 暂无文档数据</td></tr>`;
+      renderPagination();
+      return;
+    }
+
+    document.getElementById('doc-tbody').innerHTML = d.items.map(doc => {
+      const isWord = doc.file_type === 'Word';
+      const typeClass = isWord ? 'word' : 'pdf';
+      const typeIcon = isWord ? '📝' : '📕';
+      const badgeClass = isWord ? 'badge-word' : 'badge-pdf';
+      const date = doc.upload_at ? doc.upload_at.split('T')[0] : '-';
+
+      let statusHtml = '';
+      if (doc.status === 'success') {
+        statusHtml = `<span class="status-dot"><span class="dot dot-success"></span>处理成功</span>`;
+      } else if (doc.status === 'indexing') {
+        statusHtml = `<span class="status-dot"><span class="dot dot-indexing"></span>索引中...</span>`;
+      } else {
+        statusHtml = `<span class="status-dot"><span class="dot dot-failed"></span>处理失败</span>`;
+      }
+
+      const actions = doc.status === 'failed'
+        ? `<button class="action-btn action-retry" onclick="retryDoc(${doc.id})">重试</button>
+           <button class="action-btn action-delete" onclick="deleteDoc(${doc.id})">删除</button>`
+        : `<button class="action-btn action-view" onclick="viewDoc(${doc.id})">查看</button>
+           <button class="action-btn action-delete" onclick="deleteDoc(${doc.id})">删除</button>`;
+
+      return `<tr>
+        <td>
+          <div class="doc-name">
+            <div class="file-icon ${typeClass}">${typeIcon}</div>
+            <span class="doc-name-text">${escHtml(doc.filename)}</span>
+          </div>
+        </td>
+        <td><span class="badge ${badgeClass}">${doc.file_type}</span></td>
+        <td>${statusHtml}</td>
+        <td><span style="color:var(--text-sub)">${escHtml(doc.kb_name || '-')}</span></td>
+        <td><span style="color:var(--text-sub)">${date}</span></td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+
+    renderPagination();
+  }
+
+  function renderPagination() {
+    const container = document.getElementById('page-btns');
+    let html = `<button class="page-btn page-text" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>上一页</button>`;
+    for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+      html += `<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    html += `<button class="page-btn page-text" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>下一页</button>`;
+    container.innerHTML = html;
+  }
+
+  function goPage(p) {
+    if (p < 1 || p > totalPages) return;
+    currentPage = p;
+    loadDocs();
+  }
+
+  function filterDocs(f) {
+    currentFilter = f;
+    currentPage = 1;
+    document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+    document.getElementById('ftab-' + f).classList.add('active');
+    loadDocs();
+  }
+
+  // 搜索防抖
+  document.getElementById('search-input').addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => { currentPage = 1; loadDocs(); }, 400);
+  });
+
+  function escHtml(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ============ 文档操作 ============
+  async function doUpload() {
+    const kbId = document.getElementById('upload-kb-select').value;
+    const fileInput = document.getElementById('file-input');
+    const file = fileInput.files[0];
+
+    if (!kbId) { showToast('请选择知识库', 'error'); return; }
+    if (!file) { showToast('请选择要上传的文件', 'error'); return; }
+
+    const btn = document.getElementById('upload-btn');
+    btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>上传中...';
+
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('kb_id', kbId);
+
+    try {
+      const res = await fetch(API + '/api/admin/documents/upload', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + getToken() },
+        body: fd
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        showToast('上传成功，正在后台建立索引');
+        closeModal('upload-modal');
+        fileInput.value = '';
+        document.getElementById('selected-file').textContent = '';
+        loadDocs();
+        // 3秒后刷新一次（等索引完成）
+        setTimeout(loadDocs, 4000);
+      } else {
+        showToast(data.message || '上传失败', 'error');
+      }
+    } catch (e) {
+      showToast('网络错误', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '开始上传';
+    }
+  }
+
+  async function deleteDoc(id) {
+    if (!confirm('确认删除此文档？删除后无法恢复。')) return;
+    try {
+      const res = await fetch(API + '/api/admin/documents/' + id, {
+        method: 'DELETE', headers: authHeaders()
+      });
+      const data = await res.json();
+      if (data.code === 200) { showToast('文档已删除'); loadDocs(); }
+      else showToast(data.message || '删除失败', 'error');
+    } catch (e) { showToast('网络错误', 'error'); }
+  }
+
+  async function retryDoc(id) {
+    try {
+      const res = await fetch(API + '/api/admin/documents/' + id + '/retry', {
+        method: 'POST', headers: authHeaders()
+      });
+      const data = await res.json();
+      if (data.code === 200) { showToast('已重新提交索引任务'); loadDocs(); }
+      else showToast(data.message || '操作失败', 'error');
+    } catch (e) { showToast('网络错误', 'error'); }
+  }
+
+  function viewDoc(id) {
+    const token = getToken();
+    window.open(`${API}/api/admin/documents/${id}/file?token=${token}`, '_blank');
+  }
+
+  // ============ 初始化 ============
+  window.addEventListener('load', async () => {
+    const ok = await checkAuth();
+    if (!ok) return;
+    await loadKbOptions();
+    loadDocs();
+    // 每10秒自动刷新（更新索引状态）
+    setInterval(loadDocs, 10000);
+  });
+</script>
+</body>
+</html>

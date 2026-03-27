@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>智语 AI 客服</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --primary: #00d4ff;
+      --primary-dark: #0090cc;
+      --primary-glow: rgba(0,212,255,0.12);
+      --bg: #0a141e;
+      --bg-card: #0f1c28;
+      --bg-input: #0b1822;
+      --bg-msg-user: #0d2236;
+      --bg-msg-ai: #101f2d;
+      --border: #1a3042;
+      --text: #dde8f5;
+      --text-sub: #6a90ab;
+      --text-muted: #3d607a;
+      --success: #00c878;
+      --sidebar-w: 260px;
+    }
+    body {
+      font-family: 'Noto Sans SC', sans-serif;
+      background: var(--bg);
+      height: 100vh; display: flex; flex-direction: column;
+      color: var(--text); overflow: hidden;
+    }
+
+    /* ===== 顶部导航 ===== */
+    .topbar {
+      display: flex; align-items: center;
+      height: 56px; padding: 0 20px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0; z-index: 50;
+    }
+    .top-logo { display: flex; align-items: center; gap: 8px; width: var(--sidebar-w); flex-shrink: 0; }
+    .top-logo-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: linear-gradient(135deg, #00d4ff, #0072cc);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; box-shadow: 0 3px 10px rgba(0,212,255,0.25);
+    }
+    .top-logo-texts {}
+    .top-logo-name { font-size: 14px; font-weight: 700; color: var(--text); }
+    .top-logo-sub  { font-size: 11px; color: var(--text-sub); }
+
+    .top-center {
+      flex: 1; display: flex; align-items: center; gap: 8px;
+      justify-content: center; padding: 0 20px;
+    }
+    .online-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .top-title { font-size: 15px; font-weight: 600; color: var(--text); }
+
+    .top-right { display: flex; align-items: center; gap: 14px; }
+    .icon-btn {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px; transition: border-color .2s;
+    }
+    .icon-btn:hover { border-color: var(--primary); }
+    .user-info-top { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+    .user-avatar {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: linear-gradient(135deg, #00d4ff, #0055aa);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #fff; flex-shrink: 0;
+    }
+    .user-name-top { font-size: 14px; font-weight: 500; }
+    .user-tag { font-size: 11px; color: var(--text-sub); }
+
+    /* ===== 主体区域 ===== */
+    .layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* ===== 左侧栏 ===== */
+    .sidebar {
+      width: var(--sidebar-w); flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      background: var(--bg-card);
+    }
+    .btn-new-chat {
+      margin: 16px; padding: 12px;
+      background: linear-gradient(135deg, #00d4ff, #0090cc);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      font-family: inherit; display: flex; align-items: center;
+      justify-content: center; gap: 7px;
+      box-shadow: 0 4px 16px rgba(0,180,255,0.2);
+      transition: opacity .2s, transform .15s;
+    }
+    .btn-new-chat:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .sidebar-section { padding: 0 12px; }
+    .sidebar-label {
+      font-size: 11px; color: var(--text-muted); font-weight: 600;
+      letter-spacing: 1px; padding: 12px 4px 6px; text-transform: uppercase;
+    }
+    .conv-list { flex: 1; overflow-y: auto; padding: 0 12px; }
+    .conv-list::-webkit-scrollbar { width: 4px; }
+    .conv-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .conv-item {
+      padding: 10px 12px; border-radius: 8px; cursor: pointer;
+      display: flex; align-items: center; gap: 8px;
+      transition: background .15s; margin-bottom: 2px;
+      border: 1px solid transparent;
+    }
+    .conv-item:hover { background: rgba(255,255,255,0.04); }
+    .conv-item.active { background: var(--primary-glow); border-color: rgba(0,212,255,0.15); }
+    .conv-icon { font-size: 14px; flex-shrink: 0; opacity: 0.7; }
+    .conv-title {
+      font-size: 13px; color: var(--text-sub); flex: 1;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .conv-item.active .conv-title { color: var(--primary); }
+    .conv-delete {
+      opacity: 0; font-size: 14px; color: var(--text-muted); cursor: pointer;
+      transition: opacity .15s; background: none; border: none; padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .conv-item:hover .conv-delete { opacity: 1; }
+    .conv-delete:hover { color: #e05252; }
+
+    .more-history {
+      padding: 8px 16px 12px; font-size: 13px; color: var(--text-muted);
+      cursor: pointer; display: flex; align-items: center; gap: 5px;
+    }
+    .more-history:hover { color: var(--text-sub); }
+
+    .sidebar-bottom {
+      border-top: 1px solid var(--border); padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .sidebar-action {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 10px; border-radius: 8px; cursor: pointer;
+      color: var(--text-sub); font-size: 13px;
+      transition: background .15s; border: none; background: none;
+      font-family: inherit; width: 100%; text-align: left;
+    }
+    .sidebar-action:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .sidebar-action .act-icon { font-size: 16px; }
+
+    /* ===== 聊天主区域 ===== */
+    .chat-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .messages-area { flex: 1; overflow-y: auto; padding: 24px; }
+    .messages-area::-webkit-scrollbar { width: 5px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* 消息 */
+    .msg-row { display: flex; gap: 12px; margin-bottom: 22px; max-width: 780px; }
+    .msg-row.user { flex-direction: row-reverse; margin-left: auto; }
+    .msg-row.user .msg-content { align-items: flex-end; }
+
+    .msg-avatar {
+      width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px;
+    }
+    .msg-avatar.ai {
+      background: linear-gradient(135deg, #00d4ff, #0055aa);
+    }
+    .msg-avatar.user {
+      background: linear-gradient(135deg, #334466, #223355);
+    }
+
+    .msg-content { display: flex; flex-direction: column; max-width: calc(100% - 60px); }
+    .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .msg-sender { font-size: 13px; font-weight: 600; color: var(--text-sub); }
+    .msg-time { font-size: 12px; color: var(--text-muted); }
+    .msg-row.user .msg-header { flex-direction: row-reverse; }
+
+    .msg-bubble {
+      padding: 14px 17px; border-radius: 12px;
+      font-size: 14px; line-height: 1.7; color: var(--text);
+      word-break: break-word;
+    }
+    .msg-row.ai .msg-bubble {
+      background: var(--bg-msg-ai);
+      border: 1px solid var(--border);
+      border-top-left-radius: 4px;
+    }
+    .msg-row.user .msg-bubble {
+      background: var(--bg-msg-user);
+      border: 1px solid rgba(0,180,255,0.15);
+      border-top-right-radius: 4px;
+      color: #c8dcf5;
+    }
+
+    /* 消息内容格式化 */
+    .msg-bubble p { margin-bottom: 8px; }
+    .msg-bubble p:last-child { margin-bottom: 0; }
+    .msg-bubble ol, .msg-bubble ul { padding-left: 20px; margin-bottom: 8px; }
+    .msg-bubble li { margin-bottom: 4px; }
+    .msg-bubble strong { color: var(--primary); }
+    .msg-bubble code {
+      background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px;
+      font-size: 13px; color: #80d0ff;
+    }
+
+    /* 来源标记 */
+    .msg-sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .source-tag {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15);
+      color: var(--primary); font-size: 11px; padding: 3px 9px;
+      border-radius: 20px;
+    }
+
+    /* 消息操作按钮 */
+    .msg-actions {
+      display: flex; gap: 6px; margin-top: 8px; opacity: 0;
+      transition: opacity .2s;
+    }
+    .msg-row:hover .msg-actions { opacity: 1; }
+    .msg-act-btn {
+      font-size: 14px; cursor: pointer; padding: 3px 7px;
+      border-radius: 5px; border: none; background: none;
+      color: var(--text-muted); transition: all .15s;
+    }
+    .msg-act-btn:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+
+    /* 检索中提示 */
+    .searching-indicator {
+      display: flex; align-items: center; gap: 8px;
+      color: var(--primary); font-size: 13px; margin-bottom: 16px;
+      opacity: 0.8; animation: fadeInOut 1.5s ease infinite;
+    }
+    @keyframes fadeInOut { 0%,100%{opacity:0.5} 50%{opacity:1} }
+    .dots span {
+      display: inline-block; width: 5px; height: 5px; border-radius: 50%;
+      background: var(--primary); margin: 0 2px;
+      animation: bounce 1.2s ease infinite;
+    }
+    .dots span:nth-child(2) { animation-delay: .2s; }
+    .dots span:nth-child(3) { animation-delay: .4s; }
+    @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+    /* 欢迎页 */
+    .welcome-screen {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      height: 100%; text-align: center; padding: 40px;
+    }
+    .welcome-icon { font-size: 56px; margin-bottom: 18px; }
+    .welcome-title { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+    .welcome-sub { font-size: 14px; color: var(--text-sub); max-width: 400px; line-height: 1.7; }
+    .quick-prompts { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; justify-content: center; }
+    .quick-btn {
+      padding: 9px 17px; border-radius: 20px; font-size: 13px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-sub); cursor: pointer; font-family: inherit;
+      transition: all .2s;
+    }
+    .quick-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+
+    /* 输入区 */
+    .input-area {
+      border-top: 1px solid var(--border);
+      padding: 16px 24px; background: var(--bg-card);
+    }
+    .input-bottom { font-size: 12px; text-align: center; color: var(--text-muted); margin-top: 10px; }
+    .input-bottom a { color: var(--primary); text-decoration: none; }
+    .input-wrap-outer {
+      display: flex; align-items: flex-end; gap: 10px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 12px; padding: 10px 12px;
+      transition: border-color .2s;
+    }
+    .input-wrap-outer:focus-within { border-color: rgba(0,212,255,0.4); }
+    .attach-btn {
+      background: none; border: none; font-size: 18px; cursor: pointer;
+      color: var(--text-muted); transition: color .2s; padding: 4px;
+      align-self: flex-end; margin-bottom: 2px;
+    }
+    .attach-btn:hover { color: var(--primary); }
+    #msg-input {
+      flex: 1; background: none; border: none; outline: none;
+      color: var(--text); font-size: 14px; font-family: inherit;
+      resize: none; max-height: 150px; min-height: 24px; line-height: 1.6;
+    }
+    #msg-input::placeholder { color: var(--text-muted); }
+    .voice-btn {
+      background: none; border: none; font-size: 18px; cursor: pointer;
+      color: var(--text-muted); transition: color .2s; padding: 4px;
+      align-self: flex-end; margin-bottom: 2px;
+    }
+    .voice-btn:hover { color: var(--primary); }
+    .send-btn {
+      width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+      background: linear-gradient(135deg, #00d4ff, #0090cc);
+      border: none; cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 3px 12px rgba(0,180,255,0.25);
+      transition: opacity .2s, transform .15s;
+    }
+    .send-btn:hover { opacity: 0.9; transform: scale(1.05); }
+    .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* ===== 右侧栏 ===== */
+    .right-panel {
+      width: 280px; flex-shrink: 0;
+      border-left: 1px solid var(--border);
+      background: var(--bg-card);
+      overflow-y: auto; padding: 20px 16px;
+      display: none; /* 暂时隐藏：相关知识库推荐、猜你想问、寻求人工专家，如需显示请改为 flex */
+      flex-direction: column; gap: 20px;
+    }
+    .right-panel::-webkit-scrollbar { width: 4px; }
+    .right-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .panel-section-title {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--text-sub);
+      margin-bottom: 12px;
+    }
+
+    .kb-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; cursor: pointer;
+      transition: border-color .2s; margin-bottom: 8px;
+    }
+    .kb-card:hover { border-color: rgba(0,212,255,0.3); }
+    .kb-card-title { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .kb-card-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+    .guess-tags { display: flex; flex-wrap: wrap; gap: 7px; }
+    .guess-tag {
+      padding: 5px 12px; border-radius: 16px; font-size: 12px;
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text-sub); cursor: pointer; transition: all .15s;
+    }
+    .guess-tag:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-glow); }
+
+    .human-card {
+      background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(0,100,200,0.05));
+      border: 1px solid rgba(0,212,255,0.12); border-radius: 12px;
+      padding: 16px;
+    }
+    .human-card-title { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+    .human-card-desc { font-size: 12px; color: var(--text-sub); line-height: 1.6; margin-bottom: 12px; }
+    .btn-human {
+      width: 100%; padding: 9px; border-radius: 8px;
+      background: linear-gradient(135deg, #00d4ff, #0090cc);
+      color: #fff; border: none; font-size: 13px; font-weight: 600;
+      cursor: pointer; font-family: inherit; transition: opacity .2s;
+    }
+    .btn-human:hover { opacity: 0.9; }
+
+    .spinner-sm {
+      display: inline-block; width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: var(--primary); border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- 顶部导航 -->
+<header class="topbar">
+  <div class="top-logo">
+    <div class="top-logo-icon">⚡</div>
+    <div class="top-logo-texts">
+      <div class="top-logo-name">智语 AI</div>
+      <div class="top-logo-sub">智能知识库驱动</div>
+    </div>
+  </div>
+
+  <div class="top-center">
+    <span class="online-dot"></span>
+    <span class="top-title">智语AI客服</span>
+  </div>
+
+  <div class="top-right">
+    <div class="icon-btn" title="通知">🔔</div>
+    <div class="icon-btn" title="更多">⋯</div>
+    <div class="user-info-top">
+      <div>
+        <div class="user-name-top" id="display-name">智语用户</div>
+        <div class="user-tag" id="user-tag-text">普通用户</div>
+      </div>
+      <div class="user-avatar">👤</div>
+    </div>
+  </div>
+</header>
+
+<!-- 主体 -->
+<div class="layout">
+
+  <!-- 左侧栏 -->
+  <aside class="sidebar">
+    <button class="btn-new-chat" onclick="newChat()">＋ 开启新对话</button>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">最近对话</div>
+    </div>
+    <div class="conv-list" id="conv-list">
+      <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">加载中...</div>
+    </div>
+    <div class="more-history" onclick="loadMoreConvs()">
+      <span>···</span> 查看更多历史
+    </div>
+
+    <div class="sidebar-bottom">
+      <button class="sidebar-action" onclick="window.location.href='/admin.html'" id="admin-btn" style="display:none">
+        <span class="act-icon">🖥️</span> 切换到管理后台
+      </button>
+      <button class="sidebar-action" onclick="doLogout()">
+        <span class="act-icon">⏻</span> 退出登录
+      </button>
+    </div>
+  </aside>
+
+  <!-- 聊天区 -->
+  <div class="chat-wrap">
+    <div class="messages-area" id="messages-area">
+      <!-- 欢迎屏 -->
+      <div class="welcome-screen" id="welcome-screen">
+        <div class="welcome-icon">🤖</div>
+        <div class="welcome-title">智语AI智能客服</div>
+        <div class="welcome-sub">
+          您好！我是智语智能客服。基于智语 AI 大模型，我可以为您提供全天候的业务咨询、故障排查和知识解答服务。请问有什么可以帮您？
+        </div>
+        <div class="quick-prompts">
+          <button class="quick-btn" onclick="quickSend('如何重置账户密码？')">如何重置账户密码？</button>
+          <button class="quick-btn" onclick="quickSend('产品的主要功能有哪些？')">产品主要功能</button>
+          <button class="quick-btn" onclick="quickSend('如何联系人工客服？')">联系人工客服</button>
+          <button class="quick-btn" onclick="quickSend('费用支付与发票申请')">费用与发票</button>
+        </div>
+      </div>
+      <!-- 消息列表 -->
+      <div id="msg-list" style="display:none"></div>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap-outer">
+        <button class="attach-btn" title="附件">📎</button>
+        <textarea id="msg-input" rows="1" placeholder="描述您遇到的问题或需求..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+        <button class="voice-btn" title="语音">🎤</button>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()" title="发送">
+          <span style="color:#fff;font-size:18px">➤</span>
+        </button>
+      </div>
+      <div class="input-bottom">
+        由智语 AI GLM 大模型提供助力支持 · <a href="#">反馈问题</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右侧栏 -->
+  <aside class="right-panel">
+    <div>
+      <div class="panel-section-title">📚 相关知识库推荐</div>
+      <div id="kb-recs">
+        <div class="kb-card">
+          <div class="kb-card-title">多重身份验证（MFA）设置</div>
+          <div class="kb-card-desc">绑定您定制手机或 Authenticator 应用，进一步提升账户安全性...</div>
+        </div>
+        <div class="kb-card">
+          <div class="kb-card-title">账户被锁定怎么办？</div>
+          <div class="kb-card-desc">由于多次尝试登录失败系统关闭的自动解锁方法...</div>
+        </div>
+        <div class="kb-card">
+          <div class="kb-card-title">修改关联手机号</div>
+          <div class="kb-card-desc">需要更换旧的手机号码？请先完成身份验证后进行更改...</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel-section-title">💡 猜你想问</div>
+      <div class="guess-tags" id="guess-tags">
+        <div class="guess-tag" onclick="quickSend('支付失败')">支付失败</div>
+        <div class="guess-tag" onclick="quickSend('修改发货地址')">修改发货地址</div>
+        <div class="guess-tag" onclick="quickSend('续费优惠')">续费优惠</div>
+        <div class="guess-tag" onclick="quickSend('人工服务')">人工服务</div>
+      </div>
+    </div>
+
+    <div class="human-card">
+      <div class="human-card-title">🧑‍💼 寻求人工专家？</div>
+      <div class="human-card-desc">如果 AI 无法满足您的需要，您可以转人工客服洽谈。</div>
+      <button class="btn-human">立即转人工</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+  const API = 'RENDER_BACKEND_URL';
+  let currentConvId = null;
+  let isSending = false;
+  let convPage = 1;
+  let convTotal = 0;
+  let convPageSize = 30;
+
+  // ============ 初始化 ============
+  function getToken() { return localStorage.getItem('token'); }
+  function getUser()  { return JSON.parse(localStorage.getItem('user') || 'null'); }
+  function authJson() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() }; }
+
+  window.addEventListener('load', async () => {
+    const token = getToken();
+    const user = getUser();
+    if (!token || !user) { window.location.href = '/'; return; }
+
+    document.getElementById('display-name').textContent = user.username || '用户';
+    if (user.role === 'admin') {
+      document.getElementById('admin-btn').style.display = 'flex';
+      document.getElementById('user-tag-text').textContent = '管理员';
+    }
+    await loadConvList();
+  });
+
+  function doLogout() {
+    if (!confirm('确认退出登录？')) return;
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    window.location.href = '/';
+  }
+
+  // ============ 对话列表 ============
+  async function loadConvList(append = false) {
+    try {
+      const res = await fetch(`${API}/api/chat/conversations?page=${convPage}&per_page=${convPageSize}`, {
+        headers: authJson()
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        convTotal = data.data.total;
+        renderConvList(data.data.items, append);
+      }
+    } catch (e) { console.warn('loadConvList failed', e); }
+  }
+
+  function renderConvList(items, append = false) {
+    const container = document.getElementById('conv-list');
+    if (!append) container.innerHTML = '';
+
+    if (!items.length && !append) {
+      container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">暂无对话记录</div>';
+      return;
+    }
+
+    items.forEach(conv => {
+      const div = document.createElement('div');
+      div.className = 'conv-item' + (conv.id === currentConvId ? ' active' : '');
+      div.id = 'conv-' + conv.id;
+      div.innerHTML = `
+        <span class="conv-icon">💬</span>
+        <span class="conv-title">${escHtml(conv.title)}</span>
+        <button class="conv-delete" onclick="deleteConv(event,${conv.id})" title="删除">✕</button>
+      `;
+      div.addEventListener('click', () => openConv(conv.id));
+      container.appendChild(div);
+    });
+  }
+
+  async function loadMoreConvs() {
+    if (convPage * convPageSize >= convTotal) return;
+    convPage++;
+    await loadConvList(true);
+  }
+
+  // ============ 新建/打开对话 ============
+  async function newChat() {
+    try {
+      const res = await fetch(API + '/api/chat/conversations', {
+        method: 'POST', headers: authJson(),
+        body: JSON.stringify({ title: '新对话' })
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        convPage = 1;
+        await loadConvList();
+        openConv(data.data.id);
+      }
+    } catch (e) { console.warn('newChat failed', e); }
+  }
+
+  async function openConv(convId) {
+    currentConvId = convId;
+    document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
+    const el = document.getElementById('conv-' + convId);
+    if (el) el.classList.add('active');
+
+    document.getElementById('welcome-screen').style.display = 'none';
+    document.getElementById('msg-list').style.display = 'block';
+    document.getElementById('msg-list').innerHTML = '';
+
+    try {
+      const res = await fetch(`${API}/api/chat/conversations/${convId}/messages`, {
+        headers: authJson()
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        const messages = data.data;
+        if (messages.length === 0) {
+          appendWelcomeMsg();
+        } else {
+          messages.forEach(msg => appendMessage(msg.role, msg.content, msg.sources || []));
+        }
+        scrollToBottom();
+      }
+    } catch (e) {}
+  }
+
+  function appendWelcomeMsg() {
+    appendMessage('assistant', '您好！我是智语智能客服。基于智语 AI 大模型，我可以为您提供全天候的业务咨询、故障排查和知识解答服务。请问有什么可以帮您？', []);
+  }
+
+  async function deleteConv(e, convId) {
+    e.stopPropagation();
+    if (!confirm('确认删除此对话？')) return;
+    try {
+      const res = await fetch(`${API}/api/chat/conversations/${convId}`, {
+        method: 'DELETE', headers: authJson()
+      });
+      const data = await res.json();
+      if (data.code === 200) {
+        if (currentConvId === convId) {
+          currentConvId = null;
+          document.getElementById('welcome-screen').style.display = 'flex';
+          document.getElementById('msg-list').style.display = 'none';
+        }
+        const el = document.getElementById('conv-' + convId);
+        if (el) el.remove();
+      }
+    } catch (e) {}
+  }
+
+  // ============ 发送消息 ============
+  async function sendMessage() {
+    if (isSending) return;
+    const input = document.getElementById('msg-input');
+    const content = input.value.trim();
+    if (!content) return;
+
+    // 如果没有当前对话，先创建
+    if (!currentConvId) {
+      try {
+        const res = await fetch(API + '/api/chat/conversations', {
+          method: 'POST', headers: authJson(),
+          body: JSON.stringify({ title: content.slice(0,30) })
+        });
+        const data = await res.json();
+        if (data.code !== 200) return;
+        currentConvId = data.data.id;
+        convPage = 1;
+        await loadConvList();
+
+        const el = document.getElementById('conv-' + currentConvId);
+        if (el) { el.classList.add('active'); }
+        document.getElementById('welcome-screen').style.display = 'none';
+        document.getElementById('msg-list').style.display = 'block';
+        document.getElementById('msg-list').innerHTML = '';
+      } catch (e) { return; }
+    }
+
+    isSending = true;
+    input.value = '';
+    autoResize(input);
+    document.getElementById('send-btn').disabled = true;
+
+    // 显示用户消息
+    appendMessage('user', content, []);
+
+    // 显示检索中指示器
+    const indicatorId = 'indicator-' + Date.now();
+    const indicator = document.createElement('div');
+    indicator.id = indicatorId;
+    indicator.className = 'searching-indicator';
+    indicator.innerHTML = '● 正在检索知识库以获取最准确的解答... <div class="dots"><span></span><span></span><span></span></div>';
+    document.getElementById('msg-list').appendChild(indicator);
+    scrollToBottom();
+
+    try {
+      const res = await fetch(`${API}/api/chat/conversations/${currentConvId}/messages`, {
+        method: 'POST', headers: authJson(),
+        body: JSON.stringify({ content })
+      });
+      const data = await res.json();
+
+      // 移除指示器
+      const ind = document.getElementById(indicatorId);
+      if (ind) ind.remove();
+
+      if (data.code === 200) {
+        const sources = data.data.sources || [];
+        appendMessage('assistant', data.data.assistant_message.content, sources);
+
+        // 更新对话列表标题
+        const el = document.getElementById('conv-' + currentConvId);
+        if (el) {
+          const titleEl = el.querySelector('.conv-title');
+          if (titleEl) titleEl.textContent = content.slice(0,20) + (content.length>20?'...':'');
+        }
+      } else {
+        appendMessage('assistant', '抱歉，服务异常，请稍后重试。', []);
+      }
+    } catch (e) {
+      const ind = document.getElementById(indicatorId);
+      if (ind) ind.remove();
+      appendMessage('assistant', '网络错误，请检查连接后重试。', []);
+    } finally {
+      isSending = false;
+      document.getElementById('send-btn').disabled = false;
+      scrollToBottom();
+    }
+  }
+
+  function quickSend(text) {
+    document.getElementById('msg-input').value = text;
+    sendMessage();
+  }
+
+  // ============ 渲染消息 ============
+  function appendMessage(role, content, sources) {
+    const list = document.getElementById('msg-list');
+    const isAI = role === 'assistant';
+    const now = new Date();
+    const timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+    const formattedContent = formatContent(content);
+
+    let actionsHtml = '';
+    if (isAI) {
+      actionsHtml = `<div class="msg-actions">
+        <button class="msg-act-btn" title="有帮助" onclick="this.textContent='👍✓'">👍</button>
+        <button class="msg-act-btn" title="无帮助" onclick="this.textContent='👎✓'">👎</button>
+        <button class="msg-act-btn" title="复制" onclick="copyMsg(this)">📋</button>
+      </div>`;
+    }
+
+    const row = document.createElement('div');
+    row.className = `msg-row ${isAI ? 'ai' : 'user'}`;
+    row.innerHTML = `
+      <div class="msg-avatar ${isAI ? 'ai' : 'user'}">${isAI ? '🤖' : '👤'}</div>
+      <div class="msg-content">
+        <div class="msg-header">
+          <span class="msg-sender">${isAI ? '智语 AI' : (getUser()?.username || '您')}</span>
+          <span class="msg-time">${timeStr}</span>
+        </div>
+        <div class="msg-bubble">${formattedContent}</div>
+        ${actionsHtml}
+      </div>
+    `;
+    list.appendChild(row);
+  }
+
+  function formatContent(text) {
+    // 简单的Markdown格式化
+    return escHtml(text)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      .replace(/^(\d+\.\s)/gm, '<br>$1')
+      .replace(/\n/g, '<br>');
+  }
+
+  function copyMsg(btn) {
+    const bubble = btn.closest('.msg-content').querySelector('.msg-bubble');
+    const text = bubble.innerText;
+    navigator.clipboard.writeText(text).then(() => { btn.textContent = '✅'; });
+  }
+
+  // ============ 工具函数 ============
+  function scrollToBottom() {
+    const area = document.getElementById('messages-area');
+    area.scrollTop = area.scrollHeight;
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); sendMessage();
+    }
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 150) + 'px';
+  }
+
+  function escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+</script>
+</body>
+</html>
