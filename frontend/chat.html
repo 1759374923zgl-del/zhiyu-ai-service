@@ -205,13 +205,45 @@
       font-size: 13px; color: #80d0ff;
     }
 
-    /* 来源标记 */
-    .msg-sources { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-    .source-tag {
-      display: inline-flex; align-items: center; gap: 4px;
-      background: rgba(0,212,255,0.06); border: 1px solid rgba(0,212,255,0.15);
-      color: var(--primary); font-size: 11px; padding: 3px 9px;
-      border-radius: 20px;
+    /* 引用标注区域 */
+    .msg-citations {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(0,212,255,0.04);
+      border: 1px solid rgba(0,212,255,0.12);
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .citations-title {
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+    .citation-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .citation-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2);
+      color: var(--primary); font-size: 11px; padding: 4px 10px;
+      border-radius: 20px; text-decoration: none;
+      cursor: pointer; transition: all .2s;
+      max-width: 260px;
+    }
+    .citation-tag:hover { background: rgba(0,212,255,0.15); border-color: rgba(0,212,255,0.4); }
+    .citation-tag .ct-icon { font-size: 12px; flex-shrink: 0; }
+    .citation-tag .ct-name {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .citation-tag .ct-page {
+      flex-shrink: 0; opacity: 0.7;
+      border-left: 1px solid rgba(0,212,255,0.3);
+      padding-left: 6px; margin-left: 2px;
+    }
+    .citation-ai {
+      display: inline-flex; align-items: center; gap: 5px;
+      color: var(--text-muted); font-size: 11px; font-style: italic;
     }
 
     /* 消息操作按钮 */
@@ -494,7 +526,10 @@
 </div>
 
 <script>
-  const API = 'https://zhiyu-ai-backend.onrender.com';
+  // 自动检测环境：本地开发用相对路径，线上部署用 Render 地址
+  const API = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? ''
+    : 'https://zhiyu-ai-backend.onrender.com';
   let currentConvId = null;
   let isSending = false;
   let convPage = 1;
@@ -730,6 +765,12 @@
 
     const formattedContent = formatContent(content);
 
+    // 生成引用标注 HTML（仅 AI 消息）
+    let citationsHtml = '';
+    if (isAI) {
+      citationsHtml = buildCitationsHtml(sources);
+    }
+
     let actionsHtml = '';
     if (isAI) {
       actionsHtml = `<div class="msg-actions">
@@ -749,11 +790,51 @@
           <span class="msg-time">${timeStr}</span>
         </div>
         <div class="msg-bubble">${formattedContent}</div>
+        ${citationsHtml}
         ${actionsHtml}
       </div>
     `;
     list.appendChild(row);
   }
+
+  // 构造引用标注 HTML
+  function buildCitationsHtml(sources) {
+    if (!sources || sources.length === 0) {
+      // 无知识库来源，显示 AI 自身知识标注
+      return `<div class="msg-citations">
+        <div class="citation-ai">🤖 由智语 AI 根据自身知识回答</div>
+      </div>`;
+    }
+
+    // 去重：同一文档同一页只显示一次
+    const seen = new Set();
+    const uniqueSources = sources.filter(s => {
+      const key = `${s.doc_id}_${s.page_num}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    const token = localStorage.getItem('token') || '';
+    const tags = uniqueSources.map(s => {
+      const docId = s.doc_id || '';
+      const pageNum = s.page_num || 1;
+      const filename = s.filename || s.kb_name || '未知文档';
+      const shortName = filename.length > 22 ? filename.slice(0, 20) + '…' : filename;
+      const url = `${API}/api/admin/public/documents/${docId}/file?token=${encodeURIComponent(token)}#page=${pageNum}`;
+      return `<a href="${url}" target="_blank" class="citation-tag" title="${escHtml(filename)} 第${pageNum}页">
+        <span class="ct-icon">📄</span>
+        <span class="ct-name">${escHtml(shortName)}</span>
+        <span class="ct-page">第${pageNum}页</span>
+      </a>`;
+    }).join('');
+
+    return `<div class="msg-citations">
+      <div class="citations-title">📚 引用来源</div>
+      <div class="citation-tags">${tags}</div>
+    </div>`;
+  }
+
 
   function formatContent(text) {
     // 简单的Markdown格式化

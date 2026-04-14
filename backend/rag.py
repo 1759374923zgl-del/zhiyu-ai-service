@@ -26,7 +26,7 @@ def get_chroma_collection():
 
 
 def extract_text_from_pdf(file_path: str) -> str:
-    """从PDF文件中提取文本"""
+    """从PDF文件中提取文本（兼容旧接口）"""
     text = ""
     try:
         doc = fitz.open(file_path)
@@ -38,8 +38,23 @@ def extract_text_from_pdf(file_path: str) -> str:
     return text
 
 
+def extract_pages_from_pdf(file_path: str) -> list:
+    """从PDF文件中按页提取文本，返回 [(page_num, text), ...] 列表（1-based）"""
+    pages = []
+    try:
+        doc = fitz.open(file_path)
+        for i, page in enumerate(doc):
+            text = page.get_text().strip()
+            if text:
+                pages.append((i + 1, text))
+        doc.close()
+    except Exception as e:
+        raise ValueError(f"PDF解析失败: {str(e)}")
+    return pages
+
+
 def extract_text_from_docx(file_path: str) -> str:
-    """从Word文档中提取文本"""
+    """从Word文档中提取文本（兼容旧接口）"""
     text = ""
     try:
         doc = DocxDocument(file_path)
@@ -55,6 +70,35 @@ def extract_text_from_docx(file_path: str) -> str:
     except Exception as e:
         raise ValueError(f"Word文档解析失败: {str(e)}")
     return text
+
+
+def extract_pages_from_docx(file_path: str, chars_per_page: int = 1000) -> list:
+    """从Word文档中提取文本并按字符数模拟分页，返回 [(page_num, text), ...] 列表（1-based）"""
+    try:
+        doc = DocxDocument(file_path)
+        paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+        # 解析表格内容
+        for table in doc.tables:
+            for row in table.rows:
+                row_text = " | ".join([cell.text.strip() for cell in row.cells if cell.text.strip()])
+                if row_text:
+                    paragraphs.append(row_text)
+        full_text = "\n".join(paragraphs)
+    except Exception as e:
+        raise ValueError(f"Word文档解析失败: {str(e)}")
+
+    # 按字符数模拟分页
+    pages = []
+    page_num = 1
+    start = 0
+    while start < len(full_text):
+        end = start + chars_per_page
+        page_text = full_text[start:end].strip()
+        if page_text:
+            pages.append((page_num, page_text))
+        start = end
+        page_num += 1
+    return pages
 
 
 def chunk_text(text: str, chunk_size: int = None, overlap: int = None) -> list:
@@ -95,23 +139,30 @@ def get_embedding(text: str) -> list:
 
 def index_document(doc_id: int, file_path: str, file_type: str, kb_name: str) -> int:
     """
-    处理并索引文档
+    处理并索引文档（支持页码信息）
     返回：成功索引的文本块数量
     """
-    # 1. 提取文本
+    # 1. 按页提取文本
     if file_type == "PDF":
-        text = extract_text_from_pdf(file_path)
+        pages = extract_pages_from_pdf(file_path)
     elif file_type in ("Word", "DOCX"):
-        text = extract_text_from_docx(file_path)
+        pages = extract_pages_from_docx(file_path)
     else:
         raise ValueError(f"不支持的文件类型: {file_type}")
 
-    if not text.strip():
+    if not pages:
         raise ValueError("文档内容为空，无法索引")
 
-    # 2. 分块
-    chunks = chunk_text(text)
-    if not chunks:
+    # 2. 对每页内容进行分块，记录页码
+    chunk_size = Config.CHUNK_SIZE
+    overlap = Config.CHUNK_OVERLAP
+    page_chunks = []  # [(page_num, chunk_text), ...]
+    for page_num, page_text in pages:
+        sub_chunks = chunk_text(page_text, chunk_size=chunk_size, overlap=overlap)
+        for sub in sub_chunks:
+            page_chunks.append((page_num, sub))
+
+    if not page_chunks:
         raise ValueError("文档分块结果为空")
 
     # 3. 向量化并存储
@@ -128,7 +179,7 @@ def index_document(doc_id: int, file_path: str, file_type: str, kb_name: str) ->
     metadatas = []
     ids = []
 
-    for i, chunk in enumerate(chunks):
+    for i, (page_num, chunk) in enumerate(page_chunks):
         try:
             embedding = get_embedding(chunk)
             embeddings.append(embedding)
@@ -136,7 +187,8 @@ def index_document(doc_id: int, file_path: str, file_type: str, kb_name: str) ->
             metadatas.append({
                 "doc_id": str(doc_id),
                 "kb_name": kb_name,
-                "chunk_index": i
+                "chunk_index": i,
+                "page_num": page_num
             })
             ids.append(f"doc_{doc_id}_chunk_{i}")
         except Exception as e:
@@ -227,6 +279,7 @@ def search_knowledge(query: str, top_k: int = None) -> list:
                         "content": doc,
                         "kb_name": meta.get("kb_name", ""),
                         "doc_id": meta.get("doc_id", ""),
+                        "page_num": meta.get("page_num", 1),
                         "score": round(similarity, 4)
                     })
 

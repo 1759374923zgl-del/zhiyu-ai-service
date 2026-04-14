@@ -320,3 +320,44 @@ def view_document_file(doc_id):
         mimetype="application/pdf" if is_pdf else "application/octet-stream"
     )
 
+
+# ==================== 普通用户文档查看接口（引用标注跳转使用）====================
+
+@admin_bp.route("/public/documents/<int:doc_id>/file", methods=["GET"])
+def view_document_file_public(doc_id):
+    """
+    普通已登录用户可访问的文档查看接口（用于引用标注点击跳转）
+    通过 token 查询参数验证已登录身份（不要求管理员权限）
+    """
+    from flask import send_file
+    from flask_jwt_extended import decode_token
+
+    token = request.args.get("token", "")
+    if not token:
+        return jsonify({"code": 401, "message": "缺少认证 Token"}), 401
+
+    try:
+        decoded = decode_token(token)
+        user_id = int(decoded["sub"])
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"code": 401, "message": "用户不存在或 Token 无效"}), 401
+    except Exception:
+        return jsonify({"code": 401, "message": "Token 无效或已过期"}), 401
+
+    doc = Document.query.get(doc_id)
+    if not doc:
+        return jsonify({"code": 404, "message": "文档不存在"}), 404
+
+    if not os.path.exists(doc.filename):
+        return jsonify({"code": 404, "message": "文件不存在（可能已被删除）"}), 404
+
+    # PDF：内联预览（浏览器支持 #page=N 锚点跳转）；Word：触发下载
+    is_pdf = doc.file_type == "PDF"
+    return send_file(
+        doc.filename,
+        download_name=doc.original_filename,
+        as_attachment=not is_pdf,
+        mimetype="application/pdf" if is_pdf else "application/octet-stream"
+    )
+

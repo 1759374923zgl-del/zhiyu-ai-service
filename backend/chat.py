@@ -146,15 +146,29 @@ def send_message(conv_id):
     except Exception as e:
         answer = f"抱歉，AI服务暂时不可用，请稍后再试。错误信息：{str(e)}"
 
-    # 保存AI消息
-    sources_json = json.dumps([
-        {
+    # 查询每个 context_item 对应的文档原始名称
+    def get_doc_filename(doc_id_str):
+        try:
+            from models import Document
+            doc_obj = Document.query.get(int(doc_id_str))
+            return doc_obj.original_filename if doc_obj else ""
+        except:
+            return ""
+
+    # 构造完整 source 信息（含页码和文件名）
+    full_sources = []
+    for item in context_items:
+        full_sources.append({
             "kb_name": item["kb_name"],
+            "doc_id": item.get("doc_id", ""),
+            "page_num": item.get("page_num", 1),
+            "filename": get_doc_filename(item.get("doc_id", "")),
             "content_preview": item["content"][:100],
             "score": item["score"]
-        }
-        for item in context_items
-    ], ensure_ascii=False)
+        })
+
+    # 保存AI消息
+    sources_json = json.dumps(full_sources, ensure_ascii=False)
 
     ai_msg = Message(
         conversation_id=conv_id,
@@ -175,9 +189,6 @@ def send_message(conv_id):
             "user_message": user_msg.to_dict(),
             "assistant_message": ai_msg.to_dict(),
             "has_knowledge": len(context_items) > 0,
-            "sources": [
-                {"kb_name": item["kb_name"], "score": item["score"]}
-                for item in context_items
-            ]
+            "sources": full_sources
         }
     })
