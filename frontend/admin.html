@@ -582,12 +582,15 @@
       if (data.code === 200) {
         showToast('知识库创建成功');
         closeModal('kb-modal');
+        // 同时刷新知识库下拉列表和文档列表
+        await loadKbOptions();
         loadDocs();
       } else {
         showToast(data.message || '创建失败', 'error');
       }
     } catch (e) {
-      showToast('网络错误', 'error');
+      showToast('网络错误，请检查后端服务是否运行', 'error');
+      console.warn('[doCreateKb] fetch error:', e);
     } finally {
       btn.disabled = false; btn.textContent = '创建';
     }
@@ -617,10 +620,18 @@
       const data = await res.json();
       if (data.code === 200) {
         renderDocs(data.data);
+      } else {
+        // 非200响应（如401/403/500）时也要清除「加载中」提示
+        document.getElementById('doc-tbody').innerHTML =
+          `<tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">⚠️ 加载失败（${data.message || res.status}）</td></tr>`;
+        document.getElementById('page-info').textContent = '暂无记录';
       }
     } catch (e) {
+      // 网络错误或后端未启动时，替换掉「加载中」
       document.getElementById('doc-tbody').innerHTML =
-        '<tr class="loading-row"><td colspan="6">⚠️ 加载失败</td></tr>';
+        '<tr><td colspan="6" style="text-align:center;padding:50px;color:var(--text-muted)">⚠️ 网络连接失败，请检查后端服务是否已启动</td></tr>';
+      document.getElementById('page-info').textContent = '暂无记录';
+      console.warn('[loadDocs] fetch error:', e);
     }
 
     await loadStats();
@@ -797,14 +808,66 @@
     window.open(`${API}/api/admin/documents/${id}/file?token=${token}`, '_blank');
   }
 
+  // ============ 后端唤醒检测 ============
+  async function waitForBackend() {
+    // 仅生产环境（非本地）才需要等待 Render 冷启动
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
+
+    // 创建唤醒提示条
+    const bar = document.createElement('div');
+    bar.id = 'wake-bar';
+    bar.style.cssText = `
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      background:linear-gradient(90deg,#7a4f00,#b87000);
+      color:#ffe8a0;font-size:13px;font-weight:500;
+      padding:10px 20px;text-align:center;
+      display:flex;align-items:center;justify-content:center;gap:10px;
+      box-shadow:0 2px 12px rgba(0,0,0,0.4);
+    `;
+    bar.innerHTML = `
+      <span style="animation:spin .8s linear infinite;display:inline-block;font-size:16px">⚙️</span>
+      <span>后端服务正在唤醒（Render 免费版首次访问需等待约 30-50 秒），请稍候...</span>
+    `;
+    document.body.appendChild(bar);
+
+    // 每3秒 ping 一次，最多60秒
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 3000));
+      try {
+        const res = await fetch(API + '/api/health', { signal: AbortSignal.timeout(4000) });
+        if (res.ok) {
+          bar.style.background = 'linear-gradient(90deg,#003a1a,#006030)';
+          bar.style.color = '#80ffb0';
+          bar.innerHTML = '✅ 后端服务已就绪，数据加载中...';
+          await new Promise(r => setTimeout(r, 1500));
+          bar.remove();
+          return;
+        }
+      } catch (_) {}
+    }
+    // 超时：提示用户
+    bar.style.background = 'linear-gradient(90deg,#3a0000,#600000)';
+    bar.style.color = '#ffaaaa';
+    bar.innerHTML = '❌ 后端服务启动超时，请刷新页面或稍后再试';
+  }
+
   // ============ 初始化 ============
   window.addEventListener('load', async () => {
     const ok = await checkAuth();
     if (!ok) return;
+
+    // 先尝试快速 ping，若后端未在线则等待唤醒
+    try {
+      const r = await fetch(API + '/api/health', { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) throw new Error('not ok');
+    } catch (_) {
+      await waitForBackend();
+    }
+
     await loadKbOptions();
     loadDocs();
-    // 每10秒自动刷新（更新索引状态）
-    setInterval(loadDocs, 10000);
+    // 每15秒自动刷新（更新索引状态）
+    setInterval(loadDocs, 15000);
   });
 </script>
 </body>

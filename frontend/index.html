@@ -415,7 +415,47 @@
       const user = JSON.parse(localStorage.getItem('user') || 'null');
       if (token && user) {
         window.location.href = user.role === 'admin' ? '/admin.html' : '/chat.html';
+        return;
       }
+
+      // 仅生产环境才检测后端冷启动
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
+
+      // 创建唤醒提示条（插入到 main 顶部）
+      const bar = document.createElement('div');
+      bar.id = 'wake-bar';
+      bar.style.cssText = `
+        position:fixed;top:0;left:0;right:0;z-index:9999;
+        background:linear-gradient(90deg,#7a4f00,#b87000);
+        color:#ffe8a0;font-size:13px;font-weight:500;
+        padding:9px 20px;text-align:center;
+        display:flex;align-items:center;justify-content:center;gap:8px;
+        box-shadow:0 2px 12px rgba(0,0,0,0.4);
+      `;
+      bar.innerHTML = `<span style="animation:spin .8s linear infinite;display:inline-block">⚙️</span>
+        <span>后端正在唤醒（Render 免费版首次访问约需 30-50 秒），请稍候再登录...</span>`;
+      document.body.appendChild(bar);
+
+      // 轮询直到后端就绪
+      (async () => {
+        for (let i = 0; i < 20; i++) {
+          await new Promise(r => setTimeout(r, 3000));
+          try {
+            const res = await fetch(API + '/api/health', { signal: AbortSignal.timeout(4000) });
+            if (res.ok) {
+              bar.style.background = 'linear-gradient(90deg,#003a1a,#006030)';
+              bar.style.color = '#80ffb0';
+              bar.innerHTML = '✅ 后端已就绪，可以正常登录';
+              await new Promise(r => setTimeout(r, 2000));
+              bar.remove();
+              return;
+            }
+          } catch (_) {}
+        }
+        bar.style.background = 'linear-gradient(90deg,#3a0000,#600000)';
+        bar.style.color = '#ffaaaa';
+        bar.innerHTML = '❌ 后端启动超时，请稍后刷新页面';
+      })();
     });
   </script>
 </body>
